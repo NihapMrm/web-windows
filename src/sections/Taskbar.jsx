@@ -14,7 +14,7 @@ import ContactModel from '../components/models/ContactModel';
 
 
 
-const Taskbar = ({ activePopup, openPopup, closePopup, desktopItems, projectsRef, projectsFolder, onOpenNotepad }) =>{
+const Taskbar = ({ activePopup, openPopup, closePopup, desktopItems, projectsRef, projectsFolder, onOpenNotepad, onRenameDesktopItem }) =>{
     
     
     return(
@@ -53,7 +53,7 @@ const Taskbar = ({ activePopup, openPopup, closePopup, desktopItems, projectsRef
        <AnimatePresence>
          {activePopup === 'skills' && <SkillsModel onClose={closePopup} />}
          {activePopup === 'experience' && <ExperienceModel onClose={closePopup} />}
-         {activePopup === 'projects' && <ProjectsModel ref={projectsRef} desktopItems={desktopItems} initialFolder={projectsFolder} onClose={closePopup} onOpenNotepad={onOpenNotepad} />}
+         {activePopup === 'projects' && <ProjectsModel ref={projectsRef} desktopItems={desktopItems} initialFolder={projectsFolder} onClose={closePopup} onOpenNotepad={onOpenNotepad} onRenameDesktopItem={onRenameDesktopItem} />}
          {activePopup === 'education' && <EducationModel onClose={closePopup} />}
          {activePopup === 'contact' && <ContactModel onClose={closePopup} />}
        </AnimatePresence>

@@ -92,7 +92,7 @@ const Desktop = ({ onLogout }) => {
 
     const handleView = (size) => setViewSize(size);
 
-    const handleOpenFile = (name) => setNotepadFile(name);
+    const handleOpenFile = (name, id) => setNotepadFile({ name, id });
 
     const handleOpenFolder = (folderName) => {
         if (activePopup === 'projects' && projectsRef.current) {
@@ -113,6 +113,7 @@ const Desktop = ({ onLogout }) => {
                 projectsRef={projectsRef}
                 projectsFolder={projectsFolder}
                 onOpenNotepad={handleOpenFile}
+                onRenameDesktopItem={handleRename}
             />
             {desktopItems.map(item => (
                 <DesktopFile
@@ -150,7 +151,7 @@ const Desktop = ({ onLogout }) => {
                 </AnimatePresence>
             </div>
             {notepadFile && (
-                <NotepadModel fileName={notepadFile} onClose={() => setNotepadFile(null)} />
+                <NotepadModel fileName={notepadFile.name} fileId={notepadFile.id} onClose={() => setNotepadFile(null)} />
             )}
        </div>
     );

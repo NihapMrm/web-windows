@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
-import { FiX, FiPlus, FiBold, FiItalic, FiLink, FiList, FiChevronDown } from 'react-icons/fi';
+import { FiX, FiPlus, FiBold, FiItalic, FiLink, FiList, FiChevronDown, FiSave } from 'react-icons/fi';
 import { LuHeading1 } from 'react-icons/lu';
 import { RxLetterCaseCapitalize } from 'react-icons/rx';
 import { AiOutlineTable } from 'react-icons/ai';
@@ -8,11 +8,39 @@ import Close from '../close';
 import Minimize from '../minimize';
 import Restore from '../restore';
 
-const NotepadModel = ({ fileName, onClose }) => {
+const NotepadModel = ({ fileName, fileId, onClose }) => {
     const nodeRef = useRef(null);
     const [isMaximized, setIsMaximized] = useState(false);
     const [content, setContent] = useState('');
     const [isDirty, setIsDirty] = useState(false);
+    const [savedFlash, setSavedFlash] = useState(false);
+    const storageKey = `notepad_${fileId ?? fileName}`;
+
+    // Load saved content on open
+    useEffect(() => {
+        const saved = localStorage.getItem(storageKey);
+        if (saved !== null) setContent(saved);
+        setIsDirty(false);
+    }, [storageKey]);
+
+    const handleSave = useCallback(() => {
+        localStorage.setItem(storageKey, content);
+        setIsDirty(false);
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 1500);
+    }, [storageKey, content]);
+
+    // Ctrl+S / Cmd+S
+    useEffect(() => {
+        const handler = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [handleSave]);
 
     const handleChange = (e) => {
         setContent(e.target.value);
@@ -68,14 +96,15 @@ const NotepadModel = ({ fileName, onClose }) => {
 
                 {/* Menu bar */}
                 <div className="h-8 flex items-center bg-[#1c1c1c] px-3 gap-1 shrink-0 border-b border-[#2b2b2b] select-none">
-                    {['File', 'Edit', 'View'].map(m => (
-                        <button
-                            key={m}
-                            className="px-3 py-1 text-sm hover:bg-[#2b2b2b] rounded bg-transparent border-none text-white cursor-pointer"
-                        >
-                            {m}
-                        </button>
+                    <button onClick={handleSave} className="px-3 py-1 text-sm hover:bg-[#2b2b2b] rounded bg-transparent border-none text-white cursor-pointer">File</button>
+                    {['Edit', 'View'].map(m => (
+                        <button key={m} className="px-3 py-1 text-sm hover:bg-[#2b2b2b] rounded bg-transparent border-none text-white cursor-pointer">{m}</button>
                     ))}
+                    {savedFlash && (
+                        <span className="ml-auto mr-2 text-xs text-green-400 flex items-center gap-1">
+                            <FiSave className="w-3 h-3" /> Saved
+                        </span>
+                    )}
                 </div>
 
                 {/* Toolbar */}

@@ -14,7 +14,7 @@ import FileManagerIcon from './fileManagerIcon';
 
 
 
-const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup, desktopItems = [], initialFolder = 'Desktop', onOpenNotepad }, ref) => {
+const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup, desktopItems = [], initialFolder = 'Desktop', onOpenNotepad, onRenameDesktopItem }, ref) => {
         const nodeRef = React.useRef(null);
         const [position, setPosition] = useState({ x: 0, y: 0 });
         const [selectedFolder, setSelectedFolder] = useState(initialFolder || 'Desktop');
@@ -26,6 +26,8 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
         const [viewSize, setViewSize] = useState('medium-icons');
         const [showSortMenu, setShowSortMenu] = useState(false);
         const [showViewMenu, setShowViewMenu] = useState(false);
+        const [renamingItemId, setRenamingItemId] = useState(null);
+        const [renamingName, setRenamingName] = useState('');
 
         useEffect(() => {
             if (isMaximized) {
@@ -47,6 +49,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
 
         // Desktop items converted to FileManager format
         const desktopEntries = desktopItems.map(item => ({
+            id: item.id,
             type: item.type,
             name: item.name,
             icon: item.type === 'folder' ? '📁' : '📄',
@@ -223,6 +226,17 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
         };
 
         const currentFiles = sortFiles(fileData[selectedFolder] || []);
+        const selectedDesktopItem = currentFiles.find(f => f.name === selectedItem && f.id != null);
+
+        const commitRename = (id, fallbackName) => {
+            const trimmed = renamingName.trim();
+            if (trimmed && onRenameDesktopItem) {
+                onRenameDesktopItem(id, trimmed);
+                setSelectedItem(trimmed);
+            }
+            setRenamingItemId(null);
+            setRenamingName('');
+        };
 
         const getGridCols = () => {
             switch(viewSize) {
@@ -354,7 +368,17 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                     <button className="bg-transparent border-none hover:bg-[#3f3f3f] p-2 rounded" title="Paste">
                         <FileManagerIcon name={"file-paste"} size="w-4 h-4"  />
                     </button>
-                    <button className="bg-transparent border-none hover:bg-[#3f3f3f] p-2 rounded" title="Rename">
+                    <button
+                        className={`bg-transparent border-none hover:bg-[#3f3f3f] p-2 rounded ${!selectedDesktopItem ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                        title="Rename"
+                        disabled={!selectedDesktopItem}
+                        onClick={() => {
+                            if (selectedDesktopItem) {
+                                setRenamingItemId(selectedDesktopItem.id);
+                                setRenamingName(selectedDesktopItem.name);
+                            }
+                        }}
+                    >
                         <FileManagerIcon name={"file-rename"} size="w-4 h-4" />
                     </button>
                     <button className="bg-transparent border-none hover:bg-[#3f3f3f] p-2 rounded" title="Share">
@@ -580,7 +604,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                         if (item.type === 'folder')  {
                                             handleFolderClick(item.name);
                                         } else if (item.fileType === 'TextFile' && onOpenNotepad) {
-                                            onOpenNotepad(item.name);
+                                            onOpenNotepad(item.name, item.id);
                                         } else if (item.fileType === 'Virus') {
                                             activePopup === 'virus' ? closePopup() : openPopup('virus');
                                         } else if (item.fileType === 'WebLink' && item.url) {
@@ -659,6 +683,20 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                     </div>
                                     {/* Name and details */}
                                     <div className="flex-1 min-w-0">
+                                        {renamingItemId != null && renamingItemId === item.id ? (
+                                            <input
+                                                autoFocus
+                                                value={renamingName}
+                                                onChange={e => setRenamingName(e.target.value)}
+                                                onBlur={() => commitRename(item.id)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') commitRename(item.id);
+                                                    if (e.key === 'Escape') { setRenamingItemId(null); setRenamingName(''); }
+                                                }}
+                                                onClick={e => e.stopPropagation()}
+                                                className="bg-[#1c3a6e] text-white text-xs w-full rounded px-1 outline-none border border-blue-400"
+                                            />
+                                        ) : (
                                         <span className={`
                                             ${viewSize.includes('icons') ? 'text-xs text-center break-all line-clamp-2 w-full block' : ''}
                                             ${viewSize === 'list' ? 'text-sm truncate block' : ''}
@@ -669,6 +707,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                         `}>
                                             {item.name}
                                         </span>
+                                        )}
                                         {(viewSize === 'details' || viewSize === 'content') && (
                                             <div className="text-xs text-gray-400 mt-1">
                                                 {item.type === 'folder' ? 'File folder' : item.fileType || 'File'}

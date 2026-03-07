@@ -68,7 +68,7 @@ const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew,
             if (type === 'folder' && onOpen) {
               onOpen(name);
             } else if (type === 'file' && onOpenFile) {
-              onOpenFile(name);
+              onOpenFile(name, id);
             } else {
               setEditing(true);
               setTimeout(() => inputRef.current?.select(), 50);
