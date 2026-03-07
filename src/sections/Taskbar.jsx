@@ -14,7 +14,7 @@ import ContactModel from '../components/models/ContactModel';
 
 
 
-const Taskbar = ({ activePopup, openPopup, closePopup }) =>{
+const Taskbar = ({ activePopup, openPopup, closePopup, desktopItems, projectsRef, projectsFolder }) =>{
     
     
     return(
@@ -49,13 +49,15 @@ const Taskbar = ({ activePopup, openPopup, closePopup }) =>{
 
       
        </div>
+       <div onContextMenu={(e) => e.stopPropagation()}>
        <AnimatePresence>
          {activePopup === 'skills' && <SkillsModel onClose={closePopup} />}
          {activePopup === 'experience' && <ExperienceModel onClose={closePopup} />}
-         {activePopup === 'projects' && <ProjectsModel onClose={closePopup} />}
+         {activePopup === 'projects' && <ProjectsModel ref={projectsRef} desktopItems={desktopItems} initialFolder={projectsFolder} onClose={closePopup} />}
          {activePopup === 'education' && <EducationModel onClose={closePopup} />}
          {activePopup === 'contact' && <ContactModel onClose={closePopup} />}
        </AnimatePresence>
+       </div>
        </>
        
       

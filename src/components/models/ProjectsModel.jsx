@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { forwardRef, useState } from 'react'
 import Edge from '../edge';
 import FileManager from '../FileManager';
 import CssPracticeModel from './CssPracticeModel';
 import VirusModel from './VirusModel';
 
-const ProjectsModel =({onClose}) =>{
+const ProjectsModel = forwardRef(({ onClose, desktopItems, initialFolder }, ref) => {
   const [isMaximized, setIsMaximized] = useState(true);
   const [activePopup, setActivePopup] = useState(null);
   const handleRestore = () => setIsMaximized(prev => !prev);
@@ -17,11 +17,11 @@ const ProjectsModel =({onClose}) =>{
       
     return(
         <>
-        <FileManager slug={"projects"} content={content} onClose={onClose} isMaximized={isMaximized} onRestore={handleRestore} activePopup={activePopup} openPopup={openPopup} closePopup={closePopup} />
+        <FileManager ref={ref} slug={"projects"} content={content} onClose={onClose} isMaximized={isMaximized} onRestore={handleRestore} activePopup={activePopup} openPopup={openPopup} closePopup={closePopup} desktopItems={desktopItems} initialFolder={initialFolder} />
         {activePopup === 'virus' && <VirusModel onClose={closePopup} />}
         {activePopup && activePopup !== 'virus' && <CssPracticeModel onClose={closePopup} practiceName={activePopup} />}
         </>
     )
-}
+});
 
 export default ProjectsModel;

@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import Draggable from 'react-draggable'
 import { FiArrowLeft, FiArrowRight, FiArrowUp, FiChevronDown, FiChevronRight, FiCopy, FiFolder, FiHome, FiImage, FiMoreHorizontal, FiMusic, FiPlus, FiRefreshCw, FiScissors, FiShare2, FiTrash2, FiVideo, FiX } from "react-icons/fi";
 import { HiOutlineViewGrid } from "react-icons/hi";
@@ -14,11 +14,11 @@ import FileManagerIcon from './fileManagerIcon';
 
 
 
-const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup }, ref) => {
+const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup, desktopItems = [], initialFolder = 'Desktop' }, ref) => {
         const nodeRef = React.useRef(null);
         const [position, setPosition] = useState({ x: 0, y: 0 });
-        const [selectedFolder, setSelectedFolder] = useState('This PC');
-        const [navigationHistory, setNavigationHistory] = useState(['This PC']);
+        const [selectedFolder, setSelectedFolder] = useState(initialFolder || 'Desktop');
+        const [navigationHistory, setNavigationHistory] = useState([initialFolder || 'Desktop']);
         const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
         const [selectedItem, setSelectedItem] = useState(null);
         const [sortBy, setSortBy] = useState('name');
@@ -37,22 +37,38 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
         ];
 
         const defaultFolders = [
-            { icon: 'Documents', name: 'Documents', pinned: true },
-            { icon: 'Downloads', name: 'Downloads', pinned: true },
-            { icon: 'Pictures', name: 'Pictures', pinned: true },
-            { icon: 'Music', name: 'Music', pinned: true },
-            { icon: 'Videos', name: 'Videos', pinned: true },
+            { icon: 'Desktop', name: 'Desktop', pinned: true, ext: '.png' },
+            { icon: 'Documents', name: 'Documents', pinned: true, ext: '.png' },
+            { icon: 'Downloads', name: 'Downloads', pinned: true, ext: '.png' },
+            { icon: 'Pictures', name: 'Pictures', pinned: true, ext: '.png' },
+            { icon: 'Music', name: 'Music', pinned: true, ext: '.png' },
+            { icon: 'Videos', name: 'Videos', pinned: true, ext: '.png' },
         ];
+
+        // Desktop items converted to FileManager format
+        const desktopEntries = desktopItems.map(item => ({
+            type: item.type,
+            name: item.name,
+            icon: item.type === 'folder' ? '📁' : '📄',
+            fileType: item.type === 'file' ? 'TextFile' : undefined,
+        }));
+
+        // Desktop sub-folder entries (each desktop folder appears as a navigable empty folder)
+        const desktopFolderData = Object.fromEntries(
+            desktopItems.filter(i => i.type === 'folder').map(i => [i.name, []])
+        );
 
         // File data for different folders
         const fileData = {
             'This PC': [
+                { type: 'folder', name: 'Desktop', icon: '🖥️', fileType: 'Desktop' },
                 { type: 'folder', name: 'Documents', icon: '📄', fileType: 'Documents' },
                 { type: 'folder', name: 'Downloads', icon: '⬇️', fileType: 'Downloads' },
                 { type: 'folder', name: 'Pictures', icon: '🖼️', fileType: 'Pictures' },
                 { type: 'folder', name: 'Music', icon: '🎵', fileType: 'Music' },
                 { type: 'folder', name: 'Videos', icon: '🎬', fileType: 'Videos' },
             ],
+            'Desktop': desktopEntries,
             'Documents': [
                 { type: 'folder', name: 'Projects', icon: '📁' },
                 { type: 'folder', name: 'CSS Practices', icon: '📁' },
@@ -103,10 +119,12 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                 { type: 'file', name: 'How_to_make_div_center.mp4', icon: '🎬', fileType: 'Video' },
                 { type: 'file', name: 'Tutorial.mp4', icon: '🎬', fileType: 'Video' },
             ],
+            ...desktopFolderData,
         };
 
         // Folder hierarchy mapping (child -> parent)
         const folderHierarchy = {
+            'Desktop': 'This PC',
             'Documents': 'This PC',
             'Downloads': 'This PC',
             'Pictures': 'This PC',
@@ -115,16 +133,22 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
             'Projects': 'Documents',
             'CSS Practices': 'Documents',
             'Screenshots': 'Pictures',
-            'Portfolio Images': 'Pictures'
+            'Portfolio Images': 'Pictures',
+            ...Object.fromEntries(
+                desktopItems.filter(i => i.type === 'folder').map(i => [i.name, 'Desktop'])
+            ),
         };
 
-        const handleFolderClick = (folderName) => {
-            setSelectedFolder(folderName);
-        setSelectedItem(null);
+        const handleFolderClick = useCallback((folderName) => {
+            const newHistory = navigationHistory.slice(0, currentHistoryIndex + 1);
             newHistory.push(folderName);
+            setSelectedFolder(folderName);
+            setSelectedItem(null);
             setNavigationHistory(newHistory);
             setCurrentHistoryIndex(newHistory.length - 1);
-        };
+        }, [navigationHistory, currentHistoryIndex]);
+
+        useImperativeHandle(ref, () => ({ navigate: handleFolderClick }), [handleFolderClick]);
 
         const handleBack = () => {
             if (currentHistoryIndex > 0) {
@@ -522,7 +546,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                     onClick={() => handleFolderClick(folder.name)}
                                     className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer text-sm ${selectedFolder === folder.name ? 'bg-[#2c2c2c] border-l-2 border-blue-500' : 'hover:bg-[#2c2c2c]'}`}
                                 >
-                                    <FileManagerIcon name={folder.icon} size="w-6 h-6" extension=".png" />
+                                    <FileManagerIcon name={folder.icon} size="w-6 h-6" extension={folder.ext || '.png'} />
                                     <span className="flex-1 text-xs">{folder.name}</span>
                                     {folder.pinned && <BsPinAngle className="w-3 h-3 text-gray-500" />}
                                 </div>
@@ -620,6 +644,12 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                                 )}
                                                     {item.fileType === 'Videos' && (
                                                     <FileManagerIcon name={"Videos"} size={getIconSize()} extension='.png' />
+                                                )}
+                                                {item.fileType === 'TextFile' && (
+                                                    <FileManagerIcon name={"TextFile"} size={getIconSize()} />
+                                                )}
+                                                {item.fileType === 'Desktop' && (
+                                                    <FileManagerIcon name={"Desktop"} size={getIconSize()} extension='.png' />
                                                 )}
 
                                             </div>
