@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import AppsModel from './components/models/AppsModel';
 import ContextMenu from './components/ContextMenu';
 import DesktopFile from './components/DesktopFile';
+import NotepadModel from './components/models/NotepadModel';
 import { AnimatePresence } from 'framer-motion';
 
 const GRID_PADDING = 8;
@@ -23,6 +24,7 @@ const Desktop = ({ onLogout }) => {
     const [sortOrder, setSortOrder] = useState('asc');
     const [projectsFolder, setProjectsFolder] = useState('Desktop');
     const projectsRef = useRef(null);
+    const [notepadFile, setNotepadFile] = useState(null);
 
     const { cellW, cellH, iconClass } = VIEW_SIZES[viewSize];
     const maxRows = Math.floor((window.innerHeight - TASKBAR_H - GRID_PADDING * 2) / cellH);
@@ -90,6 +92,8 @@ const Desktop = ({ onLogout }) => {
 
     const handleView = (size) => setViewSize(size);
 
+    const handleOpenFile = (name) => setNotepadFile(name);
+
     const handleOpenFolder = (folderName) => {
         if (activePopup === 'projects' && projectsRef.current) {
             projectsRef.current.navigate(folderName);
@@ -108,6 +112,7 @@ const Desktop = ({ onLogout }) => {
                 desktopItems={desktopItems}
                 projectsRef={projectsRef}
                 projectsFolder={projectsFolder}
+                onOpenNotepad={handleOpenFile}
             />
             {desktopItems.map(item => (
                 <DesktopFile
@@ -120,6 +125,7 @@ const Desktop = ({ onLogout }) => {
                     onMove={handleMove}
                     canMove={canMove}
                     onOpen={handleOpenFolder}
+                    onOpenFile={handleOpenFile}
                 />
             ))}
             <AnimatePresence>
@@ -143,6 +149,9 @@ const Desktop = ({ onLogout }) => {
                     {activePopup === 'apps' && <AppsModel onClose={closePopup} openPopup={openPopup} onLogout={onLogout} />}
                 </AnimatePresence>
             </div>
+            {notepadFile && (
+                <NotepadModel fileName={notepadFile} onClose={() => setNotepadFile(null)} />
+            )}
        </div>
     );
 };

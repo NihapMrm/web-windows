@@ -4,7 +4,7 @@ import FileManager from '../FileManager';
 import CssPracticeModel from './CssPracticeModel';
 import VirusModel from './VirusModel';
 
-const ProjectsModel = forwardRef(({ onClose, desktopItems, initialFolder }, ref) => {
+const ProjectsModel = forwardRef(({ onClose, desktopItems, initialFolder, onOpenNotepad }, ref) => {
   const [isMaximized, setIsMaximized] = useState(true);
   const [activePopup, setActivePopup] = useState(null);
   const handleRestore = () => setIsMaximized(prev => !prev);
@@ -17,7 +17,7 @@ const ProjectsModel = forwardRef(({ onClose, desktopItems, initialFolder }, ref)
       
     return(
         <>
-        <FileManager ref={ref} slug={"projects"} content={content} onClose={onClose} isMaximized={isMaximized} onRestore={handleRestore} activePopup={activePopup} openPopup={openPopup} closePopup={closePopup} desktopItems={desktopItems} initialFolder={initialFolder} />
+        <FileManager ref={ref} slug={"projects"} content={content} onClose={onClose} isMaximized={isMaximized} onRestore={handleRestore} activePopup={activePopup} openPopup={openPopup} closePopup={closePopup} desktopItems={desktopItems} initialFolder={initialFolder} onOpenNotepad={onOpenNotepad} />
         {activePopup === 'virus' && <VirusModel onClose={closePopup} />}
         {activePopup && activePopup !== 'virus' && <CssPracticeModel onClose={closePopup} practiceName={activePopup} />}
         </>

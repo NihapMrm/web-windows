@@ -14,7 +14,7 @@ import FileManagerIcon from './fileManagerIcon';
 
 
 
-const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup, desktopItems = [], initialFolder = 'Desktop' }, ref) => {
+const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup, desktopItems = [], initialFolder = 'Desktop', onOpenNotepad }, ref) => {
         const nodeRef = React.useRef(null);
         const [position, setPosition] = useState({ x: 0, y: 0 });
         const [selectedFolder, setSelectedFolder] = useState(initialFolder || 'Desktop');
@@ -579,6 +579,8 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                     onDoubleClick={() => {
                                         if (item.type === 'folder')  {
                                             handleFolderClick(item.name);
+                                        } else if (item.fileType === 'TextFile' && onOpenNotepad) {
+                                            onOpenNotepad(item.name);
                                         } else if (item.fileType === 'Virus') {
                                             activePopup === 'virus' ? closePopup() : openPopup('virus');
                                         } else if (item.fileType === 'WebLink' && item.url) {

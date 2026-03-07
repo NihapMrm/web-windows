@@ -6,7 +6,7 @@ const fileIcon   = new URL('../assets/icons/TextFile.svg', import.meta.url).href
 
 const PADDING = 8;
 
-const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew, onRename, onMove, canMove, onOpen }) => {
+const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew, onRename, onMove, canMove, onOpen, onOpenFile }) => {
   const [editing, setEditing] = useState(!!isNew);
   const [label, setLabel] = useState(name);
   const [selected, setSelected] = useState(false);
@@ -67,6 +67,8 @@ const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew,
           onDoubleClick={() => {
             if (type === 'folder' && onOpen) {
               onOpen(name);
+            } else if (type === 'file' && onOpenFile) {
+              onOpenFile(name);
             } else {
               setEditing(true);
               setTimeout(() => inputRef.current?.select(), 50);
