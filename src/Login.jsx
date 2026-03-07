@@ -1,6 +1,4 @@
-import { React,useState, useEffect } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
+import { useState } from 'react';
 import './css/Login.css';
 import Time from './components/time';
 import Date from './components/date';
@@ -47,7 +45,7 @@ const Login = ({onLogin}) => {
          <div className="profile"></div>
       <h1 className="name">Nihap Mrm</h1>
       {!isLoading ? (
-      <button className="enter"  onClick={handleClick}>SIgn In</button>
+      <button className="enter"  onClick={handleClick}>Sign In</button>
     ) : (
       <div className="flex flex-col items-center justify-center">
       

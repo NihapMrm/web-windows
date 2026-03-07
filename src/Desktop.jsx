@@ -17,7 +17,7 @@ const Desktop = ({onLogout}) =>{
        <div className="h-screen desktopContainer">
             <Taskbar activePopup={activePopup} openPopup={openPopup} closePopup={closePopup} />
             <AnimatePresence>
-                {activePopup === 'apps' && <AppsModel onClose={closePopup} openPopup={openPopup} />}
+                {activePopup === 'apps' && <AppsModel onClose={closePopup} openPopup={openPopup} onLogout={onLogout} />}
             </AnimatePresence>
        </div>
     )

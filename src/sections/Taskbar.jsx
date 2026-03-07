@@ -1,4 +1,3 @@
-import { useState,useEffect } from 'react';
 import Icon from "../components/icon";
 import Search from "../components/search";
 import Weather from "../components/weather";
@@ -6,6 +5,7 @@ import Time from '../components/time';
 import Date from '../components/date';
 import QuickSettings from '../components/quickSettings';
 import { FiChevronUp } from "react-icons/fi";
+import { AnimatePresence } from 'framer-motion';
 import SkillsModel from '../components/models/SkillsModel';
 import ExperienceModel from '../components/models/ExperienceModel';
 import ProjectsModel from '../components/models/ProjectsModel';
@@ -45,16 +45,17 @@ const Taskbar = ({ activePopup, openPopup, closePopup }) =>{
         <Time taskbar={true}/>
         <Date taskbar={true}/>
        </div>
-       
        </div>
 
       
        </div>
-       {activePopup === 'skills' && <SkillsModel onClose={closePopup} />}
-       {activePopup === 'experience' && <ExperienceModel onClose={closePopup} />}
-       {activePopup === 'projects' && <ProjectsModel onClose={closePopup} />}
-       {activePopup === 'education' && <EducationModel onClose={closePopup} />}
-       {activePopup === 'contact' && <ContactModel onClose={closePopup} />}
+       <AnimatePresence>
+         {activePopup === 'skills' && <SkillsModel onClose={closePopup} />}
+         {activePopup === 'experience' && <ExperienceModel onClose={closePopup} />}
+         {activePopup === 'projects' && <ProjectsModel onClose={closePopup} />}
+         {activePopup === 'education' && <EducationModel onClose={closePopup} />}
+         {activePopup === 'contact' && <ContactModel onClose={closePopup} />}
+       </AnimatePresence>
        </>
        
       
