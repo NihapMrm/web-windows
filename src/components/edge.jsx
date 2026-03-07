@@ -35,7 +35,7 @@ const Edge = forwardRef(({ slug, content, onClose, isMaximized, onRestore }, ref
             }}
         >
             <div
-                className={`bg-[#2e2e2e] ${isMaximized ? 'w-full h-[calc(100vh-3rem)]' : 'w-[600px] h-[500px]'} relative`}
+                className={`bg-[#2e2e2e] ${isMaximized ? 'w-full h-[calc(100vh-3rem)]' : 'w-[600px] h-[500px]'} fixed top-0 left-0 z-50`}
                 style={{ transition: 'width 0.3s, height 0.3s' }}
                 ref={nodeRef}
             >

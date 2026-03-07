@@ -14,10 +14,13 @@ import FileManagerIcon from './fileManagerIcon';
 
 
 
-const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore }, ref) => {
+const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore, activePopup, openPopup, closePopup }, ref) => {
         const nodeRef = React.useRef(null);
         const [position, setPosition] = useState({ x: 0, y: 0 });
         const [selectedFolder, setSelectedFolder] = useState('This PC');
+        const [navigationHistory, setNavigationHistory] = useState(['This PC']);
+        const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
+        const [selectedItem, setSelectedItem] = useState(null);
         const [sortBy, setSortBy] = useState('name');
         const [sortOrder, setSortOrder] = useState('asc');
         const [viewSize, setViewSize] = useState('medium-icons');
@@ -44,42 +47,120 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
         // File data for different folders
         const fileData = {
             'This PC': [
-                { type: 'folder', name: 'Documents', icon: '📄' },
-                { type: 'folder', name: 'Downloads', icon: '⬇️' },
-                { type: 'folder', name: 'Pictures', icon: '🖼️' },
-                { type: 'folder', name: 'Music', icon: '🎵' },
-                { type: 'folder', name: 'Videos', icon: '🎬' },
+                { type: 'folder', name: 'Documents', icon: '📄', fileType: 'Documents' },
+                { type: 'folder', name: 'Downloads', icon: '⬇️', fileType: 'Downloads' },
+                { type: 'folder', name: 'Pictures', icon: '🖼️', fileType: 'Pictures' },
+                { type: 'folder', name: 'Music', icon: '🎵', fileType: 'Music' },
+                { type: 'folder', name: 'Videos', icon: '🎬', fileType: 'Videos' },
             ],
             'Documents': [
                 { type: 'folder', name: 'Projects', icon: '📁' },
-                { type: 'folder', name: 'Work Files', icon: '📁' },
+                { type: 'folder', name: 'CSS Practices', icon: '📁' },
                 { type: 'file', name: 'Resume.pdf', icon: '📄', fileType: 'PDF' },
                 { type: 'file', name: 'Portfolio.docx', icon: '📝', fileType: 'Word' },
                 { type: 'file', name: 'Cover Letter.docx', icon: '📝', fileType: 'Word' },
             ],
+            'Projects': [
+                { type: 'file', name: 'Butterfly Portfolio', icon: '📄', fileType: 'WebLink', url: 'https://nihap.io/' },
+                { type: 'file', name: 'Digitallink', icon: '📄', fileType: 'WebLink', url: 'https://digitallink.ae/' },
+                { type: 'file', name: 'TempMailHub', icon: '📄', fileType: 'WebLink', url: 'https://tempmailhub.org/' },
+                { type: 'file', name: 'Dahua Dubai', icon: '📄', fileType: 'WebLink', url: 'https://dahua-dubai.com/' },
+            ],
+            'CSS Practices': [
+                { type: 'file', name: 'Table Fan', icon: '📄', fileType: 'Edge' },
+                { type: 'file', name: '3D CPU', icon: '📄', fileType: 'Edge' },
+                { type: 'file', name: 'Mouse Compass', icon: '📄', fileType: 'Edge' },
+                { type: 'file', name: 'Multi Switch Bulb', icon: '📄', fileType: 'Edge' },
+                { type: 'file', name: 'Name With Snow', icon: '📄', fileType: 'Edge' },                
+                { type: 'file', name: 'Circle Task', icon: '📄', fileType: 'Edge' },
+                { type: 'file', name: 'Mouse Tracking Eye', icon: '📄', fileType: 'Edge' },
+                { type: 'file', name: 'Premium Calculator', icon: '📄', fileType: 'Edge' },               
+            ],
             'Downloads': [
-                { type: 'file', name: 'Setup.exe', icon: '⚙️', fileType: 'Application' },
-                { type: 'file', name: 'Image.zip', icon: '📦', fileType: 'Archive' },
-                { type: 'file', name: 'Document.pdf', icon: '📄', fileType: 'PDF' },
+                { type: 'file', name: 'virus.exe', icon: '⚙️', fileType: 'Virus' },
+                { type: 'file', name: 'background.png', icon: '🖼️', fileType: 'Image' },
+                { type: 'file', name: 'profile.png', icon: '🖼️', fileType: 'Image' },
+                { type: 'file', name: 'secret_files.zip', icon: '📦', fileType: 'Archive' },
             ],
             'Pictures': [
                 { type: 'folder', name: 'Screenshots', icon: '📁' },
                 { type: 'folder', name: 'Portfolio Images', icon: '📁' },
                 { type: 'file', name: 'background.png', icon: '🖼️', fileType: 'Image' },
             ],
+            'Screenshots': [
+                { type: 'file', name: 'screenshot1.png', icon: '🖼️', fileType: 'Image' },
+                { type: 'file', name: 'screenshot2.png', icon: '🖼️', fileType: 'Image' },
+            ],
+            'Portfolio Images': [
+                { type: 'file', name: 'hero-image.jpg', icon: '🖼️', fileType: 'Image' },
+                { type: 'file', name: 'logo.svg', icon: '🖼️', fileType: 'Image' },
+            ],
             'Music': [
                 { type: 'file', name: 'Song1.mp3', icon: '🎵', fileType: 'Audio' },
                 { type: 'file', name: 'Song2.mp3', icon: '🎵', fileType: 'Audio' },
             ],
             'Videos': [
-                { type: 'file', name: 'Demo.mp4', icon: '🎬', fileType: 'Video' },
+                { type: 'file', name: 'How_to_make_div_center.mp4', icon: '🎬', fileType: 'Video' },
                 { type: 'file', name: 'Tutorial.mp4', icon: '🎬', fileType: 'Video' },
             ],
         };
 
+        // Folder hierarchy mapping (child -> parent)
+        const folderHierarchy = {
+            'Documents': 'This PC',
+            'Downloads': 'This PC',
+            'Pictures': 'This PC',
+            'Music': 'This PC',
+            'Videos': 'This PC',
+            'Projects': 'Documents',
+            'CSS Practices': 'Documents',
+            'Screenshots': 'Pictures',
+            'Portfolio Images': 'Pictures'
+        };
+
         const handleFolderClick = (folderName) => {
             setSelectedFolder(folderName);
+        setSelectedItem(null);
+            newHistory.push(folderName);
+            setNavigationHistory(newHistory);
+            setCurrentHistoryIndex(newHistory.length - 1);
         };
+
+        const handleBack = () => {
+            if (currentHistoryIndex > 0) {
+                const newIndex = currentHistoryIndex - 1;
+                setCurrentHistoryIndex(newIndex);
+                setSelectedFolder(navigationHistory[newIndex]);
+            }
+        };
+
+        const handleForward = () => {
+            if (currentHistoryIndex < navigationHistory.length - 1) {
+                const newIndex = currentHistoryIndex + 1;
+                setCurrentHistoryIndex(newIndex);
+                setSelectedFolder(navigationHistory[newIndex]);
+            }
+        };
+
+        const handleUp = () => {
+            const parentFolder = folderHierarchy[selectedFolder];
+            if (parentFolder) {
+                handleFolderClick(parentFolder);
+            }
+        };
+
+        // Build breadcrumb path
+        const getBreadcrumbPath = () => {
+            const path = [selectedFolder];
+            let current = selectedFolder;
+            while (folderHierarchy[current]) {
+                current = folderHierarchy[current];
+                path.unshift(current);
+            }
+            return path;
+        };
+
+        const breadcrumbPath = getBreadcrumbPath();
 
         const handleSort = (criteria) => {
             if (sortBy === criteria) {
@@ -159,7 +240,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
             }}
         >
             <div
-                className={`bg-[#1e1e1e] ${isMaximized ? 'w-full h-[calc(100vh-3rem)]' : 'w-[900px] h-[600px]'} relative text-white`}
+                className={`bg-[#1e1e1e] ${isMaximized ? 'w-full h-[calc(100vh-3rem)]' : 'w-[900px] h-[600px]'} fixed top-0 left-0 z-50 text-white`}
                 style={{ transition: 'width 0.3s, height 0.3s' }}
                 ref={nodeRef}
             >
@@ -180,9 +261,18 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
 
                 {/* Navigation Bar */}
                 <div className="absolute top-9 w-full h-11 flex items-center gap-2 bg-[#2b2b2b] px-3">
-                    <FiArrowLeft className='hover:bg-[#3d3d3d] p-2 w-8 h-8 rounded cursor-pointer text-white' />
-                    <FiArrowRight className='hover:bg-[#3d3d3d] p-2 w-8 h-8 rounded cursor-pointer text-white' />
-                    <FiArrowUp className='hover:bg-[#3d3d3d] p-2 w-8 h-8 rounded cursor-pointer text-white' />
+                    <FiArrowLeft 
+                        onClick={handleBack}
+                        className={`p-2 w-8 h-8 rounded ${currentHistoryIndex > 0 ? 'hover:bg-[#3d3d3d] cursor-pointer text-white' : 'text-gray-600 cursor-not-allowed'}`} 
+                    />
+                    <FiArrowRight 
+                        onClick={handleForward}
+                        className={`p-2 w-8 h-8 rounded ${currentHistoryIndex < navigationHistory.length - 1 ? 'hover:bg-[#3d3d3d] cursor-pointer text-white' : 'text-gray-600 cursor-not-allowed'}`}
+                    />
+                    <FiArrowUp 
+                        onClick={handleUp}
+                        className={`p-2 w-8 h-8 rounded ${folderHierarchy[selectedFolder] ? 'hover:bg-[#3d3d3d] cursor-pointer text-white' : 'text-gray-600 cursor-not-allowed'}`}
+                    />
                     <FiRefreshCw className='hover:bg-[#3d3d3d] p-2 w-8 h-8 rounded cursor-pointer text-white' />
                     
                     {/* Dropdown/Separator */}
@@ -193,15 +283,26 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                     
                     {/* Breadcrumb */}
                     <div className="flex items-center gap-1 flex-1 text-[13px] ml-1">
-                        <span className="hover:bg-[#3d3d3d] px-3 py-1.5 rounded cursor-pointer text-white">This PC</span>
-                        <FiChevronRight className="text-gray-500 w-4 h-4" />
+                        {breadcrumbPath.map((folder, index) => (
+                            <React.Fragment key={folder}>
+                                <span 
+                                    onClick={() => handleFolderClick(folder)}
+                                    className="hover:bg-[#3d3d3d] px-3 py-1.5 rounded cursor-pointer text-white"
+                                >
+                                    {folder}
+                                </span>
+                                {index < breadcrumbPath.length - 1 && (
+                                    <FiChevronRight className="text-gray-500 w-4 h-4" />
+                                )}
+                            </React.Fragment>
+                        ))}
                     </div>
 
                     {/* Search */}
                     <div className="relative flex items-center">
                         <input
                             type="text"
-                            placeholder="Search This PC"
+                            placeholder={`Search ${selectedFolder}`}
                             className="bg-[#3d3d3d] pl-3 pr-10 py-1.5 rounded text-[13px] w-72 border-none outline-none text-white placeholder-gray-400"
                         />
                         <div className="absolute right-2 w-7 h-7 flex items-center justify-center cursor-pointer hover:bg-[#4d4d4d] rounded">
@@ -430,25 +531,48 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 bg-[#1e1e1e] overflow-y-auto p-4" onClick={() => { setShowSortMenu(false); setShowViewMenu(false); }}>
+                    <div className="flex-1 bg-[#1e1e1e] overflow-y-auto p-4" onClick={(e) => { 
+                        if (e.target === e.currentTarget) {
+                            setSelectedItem(null);
+                        }
+                        setShowSortMenu(false); 
+                        setShowViewMenu(false); 
+                    }}>
                         {/* Grid of files and folders */}
                         <div className={`${viewSize.includes('icons') ? 'grid' : 'flex flex-col'} ${getGridCols()} ${viewSize.includes('icons') ? 'gap-4' : 'gap-0'}`}>
                             {currentFiles.map((item, index) => (
                                 <div 
                                     key={index}
                                     className={`
-                                        ${viewSize.includes('icons') ? 'flex flex-col items-center justify-center p-3' : ''}
+                                        ${viewSize.includes('icons') ? 'flex flex-col items-center justify-center p-3 rounded' : ''}
                                         ${viewSize === 'list' ? 'flex flex-row items-center gap-2 px-3 py-1 text-sm' : ''}
                                         ${viewSize === 'details' ? 'flex flex-row items-center gap-3 px-3 py-1 text-sm border-b border-[#2c2c2c]' : ''}
                                         ${viewSize === 'tiles' ? 'flex flex-row items-center gap-3 p-3 border border-[#2c2c2c] rounded' : ''}
                                         ${viewSize === 'content' ? 'flex flex-row items-start gap-3 p-3 border-b border-[#2c2c2c]' : ''}
-                                        hover:bg-[#2c2c2c] cursor-pointer group
+                                        ${selectedItem === item.name ? 'bg-[#37373d] border border-[#ffffff]' : 'hover:bg-[#2c2c2c]'}
+                                        cursor-pointer group transition-colors
                                     `}
-                                    onDoubleClick={() => item.type === 'folder' && handleFolderClick(item.name)}
+                                    onDoubleClick={() => {
+                                        if (item.type === 'folder')  {
+                                            handleFolderClick(item.name);
+                                        } else if (item.fileType === 'Virus') {
+                                            activePopup === 'virus' ? closePopup() : openPopup('virus');
+                                        } else if (item.fileType === 'WebLink' && item.url) {
+                                            const width = window.screen.availWidth;
+                                            const height = window.screen.availHeight;
+                                            window.open(item.url, '_blank', `width=${width},height=${height},left=0,top=0,menubar=no,toolbar=no,location=yes,status=no,scrollbars=yes,resizable=yes`);
+                                        }  else if (item.fileType === 'Edge') {
+                                            activePopup === item.name ? closePopup() : openPopup(item.name);
+                                        }
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedItem(item.name);
+                                    }}
                                 >
                                     {/* Icon */}
                                     <div className={`${getIconSize()} flex items-center justify-center ${viewSize.includes('icons') ? 'mb-2' : 'flex-shrink-0'}`}>
-                                        {item.type === 'folder' ? (
+                                        {item.type === 'folder' && !item.fileType ? (
                                             <FileManagerIcon name={"Folder"} size={getIconSize()} />
                                         ) : (
                                             <div className="relative">
@@ -470,9 +594,34 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                                 {item.fileType === 'Application' && (
                                                     <FileManagerIcon name={"exe"} size={getIconSize()} />
                                                 )}
+                                                {item.fileType === 'Virus' && (
+                                                    <FileManagerIcon name={"exe"} size={getIconSize()} />
+                                                )}
                                                 {item.fileType === 'Archive' && (
                                                     <FileManagerIcon name={"zip"} size={getIconSize()} extension='.png' />
                                                 )}
+                                                   {item.fileType === 'WebLink' && (
+                                                    <FileManagerIcon name={"weblink"} size={getIconSize()} />
+                                                )}
+                                                   {item.fileType === 'Edge' && (
+                                                    <FileManagerIcon name={"Microsoft-Edge"} size={getIconSize()} />
+                                                )}
+                                                 {item.fileType === 'Documents' && (
+                                                    <FileManagerIcon name={"Documents"} size={getIconSize()} extension='.png' />
+                                                )}
+                                                    {item.fileType === 'Downloads' && (
+                                                    <FileManagerIcon name={"Downloads"} size={getIconSize()} extension='.png' />
+                                                )}
+                                                    {item.fileType === 'Pictures' && (
+                                                    <FileManagerIcon name={"Pictures"} size={getIconSize()} extension='.png' />
+                                                )}
+                                                    {item.fileType === 'Music' && (
+                                                    <FileManagerIcon name={"Music"} size={getIconSize()} extension='.png' />
+                                                )}
+                                                    {item.fileType === 'Videos' && (
+                                                    <FileManagerIcon name={"Videos"} size={getIconSize()} extension='.png' />
+                                                )}
+
                                             </div>
                                         )}
                                     </div>

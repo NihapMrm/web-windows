@@ -1,10 +1,15 @@
 import React, { useState } from 'react'
 import Edge from '../edge';
 import FileManager from '../FileManager';
+import CssPracticeModel from './CssPracticeModel';
+import VirusModel from './VirusModel';
 
 const ProjectsModel =({onClose}) =>{
   const [isMaximized, setIsMaximized] = useState(true);
+  const [activePopup, setActivePopup] = useState(null);
   const handleRestore = () => setIsMaximized(prev => !prev);
+  const openPopup = (popupName) => setActivePopup(popupName);
+  const closePopup = () => setActivePopup(null);
     const content = (
         <section className="" id="projects">
         </section>
@@ -12,8 +17,9 @@ const ProjectsModel =({onClose}) =>{
       
     return(
         <>
-
-        <FileManager slug={"projects"} content={content} onClose={onClose} isMaximized={isMaximized} onRestore={handleRestore} />
+        <FileManager slug={"projects"} content={content} onClose={onClose} isMaximized={isMaximized} onRestore={handleRestore} activePopup={activePopup} openPopup={openPopup} closePopup={closePopup} />
+        {activePopup === 'virus' && <VirusModel onClose={closePopup} />}
+        {activePopup && activePopup !== 'virus' && <CssPracticeModel onClose={closePopup} practiceName={activePopup} />}
         </>
     )
 }

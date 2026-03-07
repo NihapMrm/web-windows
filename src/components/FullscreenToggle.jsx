@@ -33,7 +33,7 @@ const FullscreenToggle = () => {
     return (
         <button 
             onClick={toggleFullscreen}
-            className="fixed bottom-20 right-10 z-50 bg-black/20 backdrop-blur-md border border-white/20 rounded-full p-3 text-white hover:bg-black/30 hover:scale-110 transition-all duration-200 shadow-lg"
+            className="fixed bottom-20 right-10 z-[9999] bg-black/20 backdrop-blur-md border border-white/20 rounded-full p-3 text-white hover:bg-black/30 hover:scale-110 transition-all duration-200 shadow-lg"
             title={isFullscreen ? "Exit Fullscreen (ESC)" : "Enter Fullscreen"}
         >
             {isFullscreen ? <FiMinimize size={20} /> : <FiMaximize size={20} />}
