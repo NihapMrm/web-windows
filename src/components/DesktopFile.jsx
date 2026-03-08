@@ -6,7 +6,7 @@ const fileIcon   = new URL('../assets/icons/TextFile.svg', import.meta.url).href
 
 const PADDING = 8;
 
-const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew, onRename, onMove, canMove, onOpen, onOpenFile }) => {
+const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew, onRename, onMove, canMove, onOpen, onOpenFile, customIcon, onAction }) => {
   const [editing, setEditing] = useState(!!isNew);
   const [label, setLabel] = useState(name);
   const [selected, setSelected] = useState(false);
@@ -65,7 +65,9 @@ const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew,
         <div
           className={`p-2 rounded-md w-full flex justify-center transition-colors ${selected ? 'bg-[#4a7eff40]' : 'hover:bg-[#ffffff10]'}`}
           onDoubleClick={() => {
-            if (type === 'folder' && onOpen) {
+            if (onAction) {
+              onAction();
+            } else if (type === 'folder' && onOpen) {
               onOpen(name);
             } else if (type === 'file' && onOpenFile) {
               onOpenFile(name, id);
@@ -75,9 +77,9 @@ const DesktopFile = ({ id, type, name, col, row, cellW, cellH, iconClass, isNew,
             }
           }}
         >
-          <img src={type === 'folder' ? folderIcon : fileIcon} className={iconClass} alt="" />
+          <img src={customIcon || (type === 'folder' ? folderIcon : fileIcon)} className={iconClass} alt="" />
         </div>
-        {editing ? (
+        {editing && !onAction ? (
           <input
             ref={inputRef}
             value={label}

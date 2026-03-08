@@ -5,6 +5,7 @@ import AppsModel from './components/models/AppsModel';
 import ContextMenu from './components/ContextMenu';
 import DesktopFile from './components/DesktopFile';
 import NotepadModel from './components/models/NotepadModel';
+import PersonalizationModel from './components/models/PersonalizationModel';
 import { AnimatePresence } from 'framer-motion';
 
 const GRID_PADDING = 8;
@@ -14,6 +15,12 @@ const VIEW_SIZES = {
   'medium-icons': { cellW: 88,  cellH: 100, iconClass: 'w-10 h-10' },
   'small-icons':  { cellW: 72,  cellH: 86,  iconClass: 'w-8 h-8'  },
 };
+
+const DEFAULT_ICONS = [
+  { id: 'this-pc',        name: 'This PC',       icon: '/src/assets/icons/This Pc.png',          action: 'open-projects',      col: 0, row: 0 },
+  { id: 'recycle-bin',   name: 'Recycle Bin',   icon: '/src/assets/icons/RecycleBin.png',      action: 'open-recycle',       col: 0, row: 1 },
+  { id: 'control-panel', name: 'Control Panel', icon: '/src/assets/icons/ControlPanel.png',   action: 'open-personalization', col: 0, row: 2 },
+];
 
 const Desktop = ({ onLogout }) => {
     const [activePopup, setActivePopup] = useState(null);
@@ -25,6 +32,11 @@ const Desktop = ({ onLogout }) => {
     const [projectsFolder, setProjectsFolder] = useState('Desktop');
     const projectsRef = useRef(null);
     const [notepadFile, setNotepadFile] = useState(null);
+    const [wallpaper, setWallpaper] = useState('/src/images/bg/desktop-bg.webp');
+    const [showPersonalization, setShowPersonalization] = useState(false);
+    const [defaultPositions, setDefaultPositions] = useState(
+        Object.fromEntries(DEFAULT_ICONS.map(d => [d.id, { col: d.col, row: d.row }]))
+    );
 
     const { cellW, cellH, iconClass } = VIEW_SIZES[viewSize];
     const maxRows = Math.floor((window.innerHeight - TASKBAR_H - GRID_PADDING * 2) / cellH);
@@ -41,10 +53,14 @@ const Desktop = ({ onLogout }) => {
     const closeContextMenu = () => setContextMenu(null);
 
     const findEmptyCell = (prefCol, prefRow, items) => {
-        if (!items.find(i => i.col === prefCol && i.row === prefRow)) return { col: prefCol, row: prefRow };
+        const allOccupied = [
+            ...items,
+            ...Object.entries(defaultPositions).map(([id, pos]) => ({ col: pos.col, row: pos.row })),
+        ];
+        if (!allOccupied.find(i => i.col === prefCol && i.row === prefRow)) return { col: prefCol, row: prefRow };
         for (let c = 0; c < maxCols; c++)
             for (let r = 0; r < maxRows; r++)
-                if (!items.find(i => i.col === c && i.row === r)) return { col: c, row: r };
+                if (!allOccupied.find(i => i.col === c && i.row === r)) return { col: c, row: r };
         return { col: 0, row: 0 };
     };
 
@@ -60,7 +76,11 @@ const Desktop = ({ onLogout }) => {
         setDesktopItems(prev => [...prev, { id: Date.now(), type, name, col, row, isNew: true }]);
     };
 
-    const canMove = (id, col, row) => !desktopItems.find(i => i.id !== id && i.col === col && i.row === row);
+    const canMove = (id, col, row) => {
+        const userBlocking = desktopItems.find(i => i.id !== id && i.col === col && i.row === row);
+        const defaultBlocking = Object.entries(defaultPositions).find(([k, v]) => k !== id && v.col === col && v.row === row);
+        return !userBlocking && !defaultBlocking;
+    };
 
     const handleMove = (id, col, row) => {
         setDesktopItems(prev => prev.map(i => i.id === id ? { ...i, col, row } : i));
@@ -94,6 +114,26 @@ const Desktop = ({ onLogout }) => {
 
     const handleOpenFile = (name, id) => setNotepadFile({ name, id });
 
+    const handleDefaultAction = (action) => {
+        if (action === 'open-projects') {
+            if (activePopup === 'projects' && projectsRef.current) {
+                projectsRef.current.navigate('This PC');
+            } else {
+                setProjectsFolder('This PC');
+                openPopup('projects');
+            }
+        } else if (action === 'open-recycle') {
+            if (activePopup === 'projects' && projectsRef.current) {
+                projectsRef.current.navigate('Recycle Bin');
+            } else {
+                setProjectsFolder('Recycle Bin');
+                openPopup('projects');
+            }
+        } else if (action === 'open-personalization') {
+            setShowPersonalization(true);
+        }
+    };
+
     const handleOpenFolder = (folderName) => {
         if (activePopup === 'projects' && projectsRef.current) {
             projectsRef.current.navigate(folderName);
@@ -104,7 +144,16 @@ const Desktop = ({ onLogout }) => {
     };
 
     return (
-       <div className="h-screen desktopContainer relative" onContextMenu={handleContextMenu} onClick={closeContextMenu}>
+       <div
+           className="h-screen desktopContainer relative"
+           onContextMenu={handleContextMenu}
+           onClick={closeContextMenu}
+           style={{
+               backgroundImage: `url(${wallpaper})`,
+               backgroundSize: 'cover',
+               backgroundPosition: 'center',
+           }}
+       >
             <Taskbar
                 activePopup={activePopup}
                 openPopup={openPopup}
@@ -115,6 +164,24 @@ const Desktop = ({ onLogout }) => {
                 onOpenNotepad={handleOpenFile}
                 onRenameDesktopItem={handleRename}
             />
+            {/* Default system icons */}
+            {DEFAULT_ICONS.map(icon => (
+                <DesktopFile
+                    key={icon.id}
+                    id={icon.id}
+                    type="folder"
+                    name={icon.name}
+                    col={defaultPositions[icon.id].col}
+                    row={defaultPositions[icon.id].row}
+                    cellW={cellW}
+                    cellH={cellH}
+                    iconClass={iconClass}
+                    customIcon={icon.icon}
+                    onAction={() => handleDefaultAction(icon.action)}
+                    onMove={(id, col, row) => setDefaultPositions(prev => ({ ...prev, [id]: { col, row } }))}
+                    canMove={canMove}
+                />
+            ))}
             {desktopItems.map(item => (
                 <DesktopFile
                     key={item.id}
@@ -152,6 +219,13 @@ const Desktop = ({ onLogout }) => {
             </div>
             {notepadFile && (
                 <NotepadModel fileName={notepadFile.name} fileId={notepadFile.id} onClose={() => setNotepadFile(null)} />
+            )}
+            {showPersonalization && (
+                <PersonalizationModel
+                    currentWallpaper={wallpaper}
+                    onWallpaperChange={(src) => setWallpaper(src)}
+                    onClose={() => setShowPersonalization(false)}
+                />
             )}
        </div>
     );

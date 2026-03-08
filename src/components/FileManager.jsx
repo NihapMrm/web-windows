@@ -45,6 +45,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
             { icon: 'Pictures', name: 'Pictures', pinned: true, ext: '.png' },
             { icon: 'Music', name: 'Music', pinned: true, ext: '.png' },
             { icon: 'Videos', name: 'Videos', pinned: true, ext: '.png' },
+            { icon: 'RecycleBin', name: 'Recycle Bin', pinned: false, ext: '.png' },
         ];
 
         // Desktop items converted to FileManager format
@@ -70,6 +71,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                 { type: 'folder', name: 'Pictures', icon: '🖼️', fileType: 'Pictures' },
                 { type: 'folder', name: 'Music', icon: '🎵', fileType: 'Music' },
                 { type: 'folder', name: 'Videos', icon: '🎬', fileType: 'Videos' },
+                { type: 'folder', name: 'Recycle Bin', icon: '🗑️', fileType: 'RecycleBin' },
             ],
             'Desktop': desktopEntries,
             'Documents': [
@@ -123,11 +125,13 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                 { type: 'file', name: 'Tutorial.mp4', icon: '🎬', fileType: 'Video' },
             ],
             ...desktopFolderData,
+            'Recycle Bin': [],
         };
 
         // Folder hierarchy mapping (child -> parent)
         const folderHierarchy = {
             'Desktop': 'This PC',
+            'Recycle Bin': 'This PC',
             'Documents': 'This PC',
             'Downloads': 'This PC',
             'Pictures': 'This PC',
@@ -385,7 +389,7 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                         <FileManagerIcon name={"file-share"} size="w-4 h-4" />
                     </button>
                     <button className="bg-transparent border-none hover:bg-[#3f3f3f] p-2 rounded" title="Delete">
-                        <FileManagerIcon name={"file-recycle"} size="w-4 h-4" />
+                        <FileManagerIcon name={"RecycleBin"} size="w-4 h-4" extension=".png" />
                     </button>
                     <div className="w-px h-6 bg-[#3f3f3f]"></div>
                     <div className="relative">
@@ -676,6 +680,9 @@ const FileManager = forwardRef(({ slug, content, onClose, isMaximized, onRestore
                                                 )}
                                                 {item.fileType === 'Desktop' && (
                                                     <FileManagerIcon name={"Desktop"} size={getIconSize()} extension='.png' />
+                                                )}
+                                                {item.fileType === 'RecycleBin' && (
+                                                    <FileManagerIcon name={"RecycleBin"} size={getIconSize()} extension='.png' />
                                                 )}
 
                                             </div>
