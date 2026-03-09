@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import Login from './Login';
 import Desktop from './Desktop';
-import FullscreenToggle from './components/FullscreenToggle';
-import FullscreenNotification from './components/FullscreenNotification';
+
 import './css/App.css';
 
 
@@ -31,8 +30,7 @@ function App() {
 
   return (
     <div className={`fadeContainer ${fadeClass}`}>
-      <FullscreenToggle />
-      <FullscreenNotification />
+    
       {view === "login" && <Login onLogin={handleLogin} />}
       {view === "desktop" && <Desktop onLogout={handleLogout} />}
     </div>

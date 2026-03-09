@@ -3,6 +3,11 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import App from '../App';
+import Beams from './Beams';
+import HeroSection from './HeroSection';
+import FullscreenToggle from './FullscreenToggle';
+import FullscreenNotification from './FullscreenNotification';
+
 
 // ─── INTERACTIVE SCREEN APP ───────────────────────────────────────────────────
 function ScreenApp() {
@@ -250,6 +255,7 @@ function LaptopModel({ open }) {
   );
 }
 
+
 // ─── Exported Component ───────────────────────────────────────────────────────
 export default function Laptop3D({ className = '' }) {
   const [open, setOpen] = useState(false);
@@ -259,133 +265,95 @@ export default function Laptop3D({ className = '' }) {
     setShowHero(false);
     setOpen(true);
   };
+  
 
   return (
-    <div className={`laptop3d-wrapper ${className}`} style={{ width: '100%', height: '100vh', position: 'relative' }}>
-      <Canvas camera={{ position: [0, -5, 0], fov: 45 }} shadows gl={{ antialias: true }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
-        <pointLight position={[-4, 4, -4]} intensity={0.8} color="#4a5b7a" />
-        <pointLight position={[4, 2, 4]} intensity={0.6} color="#ffffff" />
-        <spotLight position={[0, 5, 0]} intensity={0.3} angle={0.5} penumbra={1} />
-
-        <LaptopModel open={open} />
-
-        <ContactShadows position={[0, -0.12, 0]} opacity={0.5} scale={6} blur={2.5} far={1} />
-        <Environment preset="city" />
-        <OrbitControls
-          enablePan={false}
-          enableZoom={false}
-          enableRotate={false}
-          minPolarAngle={Math.PI / 6}
-          maxPolarAngle={Math.PI / 2.2}
-          minDistance={2}
-          maxDistance={7}
-        />
-      </Canvas>
-
-      {/* Hero Section */}
+    <div className={`laptop3d-wrapper ${className}`} style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+        <FullscreenToggle />
+            <FullscreenNotification />
+      {/* Animated Beams Background */}
       <div style={{
         position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',
         height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: showHero ? 'auto' : 'none',
-        opacity: showHero ? 1 : 0,
-        transition: 'opacity 0.8s ease',
-        zIndex: 10,
+        zIndex: 0,
+        pointerEvents: 'none',
       }}>
-        <h1 style={{
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: '3rem',
-          fontWeight: '700',
-          color: '#ffffff',
-          margin: '0 0 12px 0',
-          textAlign: 'center',
-          letterSpacing: '-0.5px',
-        }}>
-          Hi, I'm Nihap
-        </h1>
-        <p style={{
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: '1.2rem',
-          color: 'rgba(255, 255, 255, 0.6)',
-          margin: '0 0 36px 0',
-          textAlign: 'center',
-          maxWidth: '500px',
-          lineHeight: '1.6',
-        }}>
-          Full Stack Developer &amp; Creative Technologist
-        </p>
-        <button
-          onClick={handleStart}
-          style={{
-            background: 'rgba(86, 182, 247, 0.15)',
-            color: '#56b6f7',
-            border: '1px solid rgba(86, 182, 247, 0.5)',
-            padding: '14px 40px',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: '1.1rem',
-            letterSpacing: '0.5px',
-            fontWeight: '600',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 4px 20px rgba(86, 182, 247, 0.2)',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(86, 182, 247, 0.3)';
-            e.target.style.boxShadow = '0 4px 30px rgba(86, 182, 247, 0.35)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(86, 182, 247, 0.15)';
-            e.target.style.boxShadow = '0 4px 20px rgba(86, 182, 247, 0.2)';
-          }}
-        >
-          Start ▶
-        </button>
+        <Beams
+          beamWidth={3}
+          beamHeight={30}
+          beamNumber={20}
+          lightColor="#ffffff"
+          speed={2}
+          noiseIntensity={1.75}
+          scale={0.2}
+          rotation={30}
+        />
       </div>
 
-      {/* Close Lid Button */}
-      {open && !showHero && (
-        <button
-          onClick={() => {
-            setOpen(false);
-            setShowHero(true);
-          }}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'rgba(28, 28, 30, 0.8)',
-            color: '#56b6f7',
-            border: '1px solid rgba(86, 182, 247, 0.4)',
-            padding: '8px 18px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.2s ease',
-            zIndex: 10,
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(86, 182, 247, 0.15)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(28, 28, 30, 0.8)';
-          }}
-        >
-          ✕ Close Lid
-        </button>
-      )}
+      {/* 3D Laptop Canvas */}
+      <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 1 }}>
+        <Canvas camera={{ position: [0, -5, 0], fov: 45 }} shadows gl={{ antialias: true }}>
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
+          <pointLight position={[-4, 4, -4]} intensity={0.8} color="#4a5b7a" />
+          <pointLight position={[4, 2, 4]} intensity={0.6} color="#ffffff" />
+          <spotLight position={[0, 5, 0]} intensity={0.3} angle={0.5} penumbra={1} />
+
+          <LaptopModel open={open} />
+
+          <ContactShadows position={[0, -0.12, 0]} opacity={0.5} scale={6} blur={2.5} far={1} />
+          <Environment preset="city" />
+          <OrbitControls
+            enablePan={false}
+            enableZoom={false}
+            enableRotate={false}
+            minPolarAngle={Math.PI / 6}
+            maxPolarAngle={Math.PI / 2.2}
+            minDistance={2}
+            maxDistance={7}
+          />
+        </Canvas>
+
+        {/* Hero Section */}
+        <HeroSection show={showHero} onStart={handleStart} />
+
+        {/* Close Lid Button */}
+        {open && !showHero && (
+          <button
+            onClick={() => {
+              setOpen(false);
+              setTimeout(() => setShowHero(true), 700); // 700ms delay before showing hero
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: '#ffffff',
+              color: '#000000',
+              padding: '8px 18px',
+              borderRadius: '1000px',
+              cursor: 'pointer',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s ease',
+              zIndex: 10,
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(86, 182, 247, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(28, 28, 30, 0.8)';
+            }}
+          >
+            ✕ Close Lid
+          </button>
+        )}
+      </div>
     </div>
   );
 }
