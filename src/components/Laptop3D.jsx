@@ -1,44 +1,52 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import App from '../App';
-import Beams from './Beams';
 import HeroSection from './HeroSection';
 import FullscreenToggle from './FullscreenToggle';
 import FullscreenNotification from './FullscreenNotification';
+import FaultyTerminal from './FaultyTerminal';
 
 
 // ─── INTERACTIVE SCREEN APP ───────────────────────────────────────────────────
 function ScreenApp() {
   return (
     <div style={{
-      width: '1250px',
-      height: '800px',
-    
+      width: '100%',
+      height: '100%',
+      background: 'transparent',
       boxSizing: 'border-box',
       overflow: 'hidden',
       fontSize: '10px',
-      border: '1px solid #1a3a5c',
-      borderRadius: '8px'
+      borderRadius: '8px',
     }}>
-      <App />
+   
     </div>
   );
 }
 
 // ─── LID (screen half) ───────────────────────────────────────────────────────
-function Lid({ open }) {
+function Lid({ progressRef }) {
   const lidRef = useRef();
-  const targetAngle = open ? -Math.PI * 0.05 : Math.PI * 0.49;
+  const [interactive, setInteractive] = useState(false);
+  const interactiveRef = useRef(false);
 
   useFrame(() => {
     if (!lidRef.current) return;
+    const p = Math.min(1, progressRef.current); // clamp: lid only uses 0→1
+    const targetAngle = THREE.MathUtils.lerp(Math.PI * 0.49, -Math.PI * 0.05, p);
     lidRef.current.rotation.x = THREE.MathUtils.lerp(
       lidRef.current.rotation.x,
       targetAngle,
-      0.07
+      0.08
     );
+    const next = p > 0.9;
+    if (next !== interactiveRef.current) {
+      interactiveRef.current = next;
+      setInteractive(next);
+    }
   });
 
   return (
@@ -53,10 +61,10 @@ function Lid({ open }) {
         />
       </RoundedBox>
 
-      {/* Screen bezel - thinner bezels for modern look */}
+      {/* Screen bezel - glass transparent */}
       <mesh position={[0, 1.1, 0.028]}>
         <boxGeometry args={[3.2, 2.05, 0.002]} />
-        <meshStandardMaterial color="#000000" />
+        <meshStandardMaterial color="#88aaff" transparent opacity={0.08} roughness={0} metalness={0.1} />
       </mesh>
 
       {/* ── INTERACTIVE HTML SCREEN ── */}
@@ -64,7 +72,7 @@ function Lid({ open }) {
   position={[0, 1.1, 0.032]}
   transform
   occlude
-  style={{ pointerEvents: open ? 'auto' : 'none' }}
+  style={{ pointerEvents: interactive ? 'auto' : 'none' }}
   scale={0.1}
 >
   <ScreenApp />
@@ -246,11 +254,32 @@ function Base() {
 }
 
 // ─── Full Laptop ──────────────────────────────────────────────────────────────
-function LaptopModel({ open }) {
+function LaptopModel({ progressRef }) {
+  const groupRef = useRef();
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    // Phase 2 (p 1→2): scale laptop up toward camera
+    // Zoom starts at p=1.3, giving lid time to fully settle
+    const zoomP = Math.max(0, (progressRef.current - 1.3) / 0.7); // 0→1 over p 1.3→2
+    const scale = THREE.MathUtils.lerp(1, 3.5, zoomP);
+    groupRef.current.scale.setScalar(scale);
+  });
+
+  // ↓ pivot controls WHERE the scale originates (x, y, z)
+  // e.g. [0, 0, 2]  → scales from screen center
+  //      [0, -1, 2] → scales from laptop base
+  //      [0, 0.5, 2] → scales from above center
+  const PIVOT = [0, 0.5, 2];
+
   return (
-    <group position={[0, -1, 2]}>
-      <Base />
-      <Lid open={open} />
+    // Pivot group — this is the scale origin
+    <group ref={groupRef} position={PIVOT}>
+      {/* Offset content so it stays visually centred */}
+      <group position={[0 - PIVOT[0], -1 - PIVOT[1], 0]}>
+        <Base />
+        <Lid progressRef={progressRef} />
+      </group>
     </group>
   );
 }
@@ -258,17 +287,80 @@ function LaptopModel({ open }) {
 
 // ─── Exported Component ───────────────────────────────────────────────────────
 export default function Laptop3D({ className = '' }) {
-  const [open, setOpen] = useState(false);
   const [showHero, setShowHero] = useState(true);
+  const progressRef = useRef(0);
+  const wrapperRef = useRef();
+  const canvasWrapRef = useRef();
+  const appOverlayRef = useRef();
+  // GSAP proxy object — gsap tweens this, useFrame reads it
+  const gsapProxy = useRef({ p: 0 });
+
+  const syncOpacity = () => {
+    const p3 = Math.max(0, Math.min(1, gsapProxy.current.p - 2));
+    if (canvasWrapRef.current) canvasWrapRef.current.style.opacity = 1 - p3;
+    if (appOverlayRef.current) {
+      appOverlayRef.current.style.opacity = p3;
+      appOverlayRef.current.style.pointerEvents = p3 > 0.5 ? 'auto' : 'none';
+    }
+  };
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    const handleWheel = (e) => {
+      // Once App is fully visible, don't intercept — let App scroll normally
+      if (gsapProxy.current.p >= 3) return;
+      e.preventDefault();
+      const currentP = gsapProxy.current.p;
+      // Phase 1 (lid) fast, phase 2 (zoom) + phase 3 (fade) slower
+      const divisor = currentP >= 2 ? 200 : currentP >= 1.3 ? 800 : 300;
+      const target = Math.min(3, Math.max(0, currentP + e.deltaY / divisor));
+      gsap.to(gsapProxy.current, {
+        p: target,
+        duration: 0.6,
+        ease: 'power3.out',
+        overwrite: true,
+        onUpdate: () => {
+          progressRef.current = gsapProxy.current.p;
+          setShowHero(gsapProxy.current.p < 0.05);
+          syncOpacity();
+        },
+      });
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  const resetScene = () => {
+    gsap.to(gsapProxy.current, {
+      p: 0,
+      duration: 1.4,
+      ease: 'power2.inOut',
+      overwrite: true,
+      onUpdate: () => {
+        progressRef.current = gsapProxy.current.p;
+        setShowHero(gsapProxy.current.p < 0.05);
+        syncOpacity();
+      },
+    });
+  };
 
   const handleStart = () => {
-    setShowHero(false);
-    setOpen(true);
+    gsap.to(gsapProxy.current, {
+      p: 1,
+      duration: 1.6,
+      ease: 'power2.inOut',
+      overwrite: true,
+      onUpdate: () => {
+        progressRef.current = gsapProxy.current.p;
+        setShowHero(gsapProxy.current.p < 0.05);
+        syncOpacity();
+      },
+    });
   };
   
 
   return (
-    <div className={`laptop3d-wrapper ${className}`} style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div ref={wrapperRef} className={`laptop3d-wrapper ${className}`} style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
         <FullscreenToggle />
             <FullscreenNotification />
       {/* Animated Beams Background */}
@@ -279,22 +371,31 @@ export default function Laptop3D({ className = '' }) {
         width: '100%',
         height: '100%',
         zIndex: 0,
-        pointerEvents: 'none',
+       
       }}>
-        <Beams
-          beamWidth={3}
-          beamHeight={30}
-          beamNumber={20}
-          lightColor="#ffffff"
-          speed={2}
-          noiseIntensity={1.75}
-          scale={0.2}
-          rotation={30}
-        />
+          <FaultyTerminal
+    scale={1.5}
+    gridMul={[2, 1]}
+    digitSize={1.2}
+    timeScale={0.5}
+    pause={false}
+    scanlineIntensity={0.5}
+    glitchAmount={1}
+    flickerAmount={1}
+    noiseAmp={1}
+    chromaticAberration={0}
+    dither={0}
+    curvature={0.1}
+    tint="#ffffff"
+    mouseReact
+    mouseStrength={0.5}
+    pageLoadAnimation
+    brightness={0.6}
+  />
       </div>
 
       {/* 3D Laptop Canvas */}
-      <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 1 }}>
+      <div ref={canvasWrapRef} style={{ position: 'relative', width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}>
         <Canvas camera={{ position: [0, -5, 0], fov: 45 }} shadows gl={{ antialias: true }}>
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
@@ -302,7 +403,7 @@ export default function Laptop3D({ className = '' }) {
           <pointLight position={[4, 2, 4]} intensity={0.6} color="#ffffff" />
           <spotLight position={[0, 5, 0]} intensity={0.3} angle={0.5} penumbra={1} />
 
-          <LaptopModel open={open} />
+          <LaptopModel progressRef={progressRef} />
 
           <ContactShadows position={[0, -0.12, 0]} opacity={0.5} scale={6} blur={2.5} far={1} />
           <Environment preset="city" />
@@ -320,39 +421,38 @@ export default function Laptop3D({ className = '' }) {
         {/* Hero Section */}
         <HeroSection show={showHero} onStart={handleStart} />
 
-        {/* Close Lid Button */}
-        {open && !showHero && (
-          <button
-            onClick={() => {
-              setOpen(false);
-              setTimeout(() => setShowHero(true), 700); // 700ms delay before showing hero
-            }}
-            style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              background: '#ffffff',
-              color: '#000000',
-              padding: '8px 18px',
-              borderRadius: '1000px',
-              cursor: 'pointer',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s ease',
-              zIndex: 10,
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(86, 182, 247, 0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(28, 28, 30, 0.8)';
-            }}
-          >
-            ✕ Close Lid
-          </button>
+        {/* Scroll hint */}
+        {showHero === false && progressRef.current < 0.15 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: '0.75rem',
+            letterSpacing: '0.1em',
+            pointerEvents: 'none',
+            zIndex: 10,
+          }}>
+            scroll to open
+          </div>
         )}
+      </div>
+
+      {/* App overlay — fades in during phase 3 */}
+      <div
+        ref={appOverlayRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 2,
+          opacity: 0,
+          pointerEvents: 'none',
+          overflowY: 'auto',
+          height: '100%',
+        }}
+      >
+        <App onBack={resetScene} />
       </div>
     </div>
   );

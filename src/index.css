@@ -24,6 +24,15 @@ body{
   margin: 0;
 }
 
+@keyframes loadBar {
+  from { width: 0% }
+  to   { width: 100% }
+}
+
+.loading-bar {
+  animation: loadBar linear forwards;
+}
+
 button{
   background-color: #ffffff1c;
   border: 1px solid #ffffff24;

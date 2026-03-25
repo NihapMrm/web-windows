@@ -11,7 +11,7 @@ export default function HeroSection({ show, onStart }) {
         </h1>
       </div>
        <h1 className="text-8xl md:text-9xl font-bold mb-3 text-white text-center drop-shadow-lg">
-          Welcome to My <br></br> Portfolio
+          Welcome to My <br></br> Web OS
         </h1>
       <button
           onClick={onStart}

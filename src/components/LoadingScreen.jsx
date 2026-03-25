@@ -1,7 +1,9 @@
 import React from "react";
-import Beams from './Beams';
+import FaultyTerminal from './FaultyTerminal';
 
-const LoadingScreen = ({ progress, fading }) => {
+const FAULTY_GRID_MUL = [2, 1];
+
+const LoadingScreen = ({ fading, duration = 2000 }) => {
 
   return (
     <div
@@ -19,16 +21,25 @@ const LoadingScreen = ({ progress, fading }) => {
         zIndex: 0,
         pointerEvents: 'none',
       }}>
-        <Beams
-          beamWidth={3}
-          beamHeight={30}
-          beamNumber={20}
-          lightColor="#ffffff"
-          speed={2}
-          noiseIntensity={1.75}
-          scale={0.2}
-          rotation={30}
-        />
+         <FaultyTerminal
+    scale={1.5}
+    gridMul={FAULTY_GRID_MUL}
+    digitSize={1.2}
+    timeScale={0.5}
+    pause={false}
+    scanlineIntensity={0.5}
+    glitchAmount={1}
+    flickerAmount={1}
+    noiseAmp={1}
+    chromaticAberration={0}
+    dither={0}
+    curvature={0.1}
+    tint="#ffffff"
+    mouseReact
+    mouseStrength={0.5}
+    pageLoadAnimation
+    brightness={0.6}
+  />
       </div>
         <div className="card w-80 grid grid-cols-2 gap-x-4 gap-y-2 z-10">
             <div className="box backdrop-blur-xl bg-white/10 border border-white/20 glass-card w-40 h-40"></div>
@@ -40,7 +51,7 @@ const LoadingScreen = ({ progress, fading }) => {
 
 
 <div className="w-full backdrop-blur-xl bg-white/10 border border-white/20 glass-card rounded-full h-2">
-  <div className="bg-white h-2 rounded-full transition-all duration-75" style={{ width: `${progress}%` }}></div>
+  <div className="bg-white h-2 rounded-full loading-bar" style={{ animationDuration: `${duration}ms` }}></div>
 </div>
 
 

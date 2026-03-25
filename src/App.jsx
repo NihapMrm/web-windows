@@ -6,7 +6,7 @@ import './css/App.css';
 
 
 
-function App() {
+function App({ onBack }) {
   const [view, setView] = useState("login"); // login, desktop // need to chnage to login finally
   const [fadeClass, setFadeClass] = useState("fade-in");
 
@@ -25,6 +25,7 @@ function App() {
     setTimeout(() => {
       setView("login");
       setFadeClass("fade-in");
+      if (onBack) onBack();
     }, 500);
   };
 

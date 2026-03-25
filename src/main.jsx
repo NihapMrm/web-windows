@@ -5,35 +5,24 @@ import './index.css';
 import LoadingScreen from './components/LoadingScreen';
 import Laptop3D from './components/Laptop3D';
 
+const LOADER_DURATION = 4000; // ms — change this to adjust loading screen length
+
 function Root() {
   const [loading, setLoading] = useState(true);
   const [fading, setFading] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 1;
-      });
-    }, 18);
-    return () => clearInterval(interval);
+    const fadeTimer = setTimeout(() => setFading(true), LOADER_DURATION);
+    const hideTimer = setTimeout(() => setLoading(false), LOADER_DURATION + 500);
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
+    };
   }, []);
-
-  useEffect(() => {
-    if (progress === 100) {
-      setFading(true);
-      const doneTimer = setTimeout(() => setLoading(false), 500);
-      return () => clearTimeout(doneTimer);
-    }
-  }, [progress]);
 
   return (
     <>
-      {loading && <LoadingScreen progress={progress} fading={fading} />}
+      {loading && <LoadingScreen fading={fading} duration={LOADER_DURATION} />}
       <Laptop3D />
     </>
   );
