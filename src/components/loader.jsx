@@ -1,4 +1,4 @@
-import "./Loader.css"; // Make sure this file exists
+import "../css/loader.css"; // Make sure this file exists
 
 const Loader = () => {
   return (
