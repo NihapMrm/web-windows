@@ -26,7 +26,7 @@ const Desktop = ({ onLogout }) => {
     const [activePopup, setActivePopup] = useState(null);
     const [contextMenu, setContextMenu] = useState(null);
     const [desktopItems, setDesktopItems] = useState([]);
-    const [viewSize, setViewSize] = useState('medium-icons');
+    const [viewSize, setViewSize] = useState('large-icons');
     const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
     const [projectsFolder, setProjectsFolder] = useState('Desktop');

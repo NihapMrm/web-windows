@@ -4,6 +4,8 @@ import App from './App';
 import './index.css';
 import LoadingScreen from './components/LoadingScreen';
 import Laptop3D from './components/Laptop3D';
+import FullscreenToggle from './components/FullscreenToggle';
+import FullscreenNotification from './components/FullscreenNotification';
 
 const LOADER_DURATION = 4000; // ms — change this to adjust loading screen length
 
@@ -22,8 +24,10 @@ function Root() {
 
   return (
     <>
-      {loading && <LoadingScreen fading={fading} duration={LOADER_DURATION} />}
-      <Laptop3D />
+      {/* {loading && <LoadingScreen fading={fading} duration={LOADER_DURATION} />} */}
+       <FullscreenToggle />
+      <FullscreenNotification />
+      <App />
     </>
   );
 }
